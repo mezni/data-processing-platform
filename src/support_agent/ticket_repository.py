@@ -2,7 +2,6 @@ from collections import defaultdict
 
 
 class TicketRepository:
-
     def __init__(self):
         self._tickets: dict[int, dict] = {}
 
@@ -10,9 +9,7 @@ class TicketRepository:
         ticket_id = ticket["ticket_id"]
 
         if ticket_id in self._tickets:
-            raise ValueError(
-                f"Ticket {ticket_id} already exists"
-            )
+            raise ValueError(f"Ticket {ticket_id} already exists")
 
         self._tickets[ticket_id] = ticket
 
@@ -22,10 +19,7 @@ class TicketRepository:
     def get_all(self) -> list[dict]:
         return list(self._tickets.values())
 
-    def filter_by_priority(
-        self,
-        priority: str
-    ) -> list[dict]:
+    def filter_by_priority(self, priority: str) -> list[dict]:
 
         return [
             ticket

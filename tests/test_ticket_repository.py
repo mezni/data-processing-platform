@@ -7,19 +7,23 @@ from support_agent.ticket_repository import TicketRepository
 def repository():
     repo = TicketRepository()
 
-    repo.add({
-        "ticket_id": 1001,
-        "customer": "John",
-        "category": "refund",
-        "priority": "high",
-    })
+    repo.add(
+        {
+            "ticket_id": 1001,
+            "customer": "John",
+            "category": "refund",
+            "priority": "high",
+        }
+    )
 
-    repo.add({
-        "ticket_id": 1002,
-        "customer": "Sarah",
-        "category": "order_status",
-        "priority": "normal",
-    })
+    repo.add(
+        {
+            "ticket_id": 1002,
+            "customer": "Sarah",
+            "category": "order_status",
+            "priority": "normal",
+        }
+    )
 
     return repo
 
@@ -56,9 +60,11 @@ def test_unique_customers(repository):
 
 def test_duplicate_ticket(repository):
     with pytest.raises(ValueError):
-        repository.add({
-            "ticket_id": 1001,
-            "customer": "John",
-            "category": "refund",
-            "priority": "high",
-        })
+        repository.add(
+            {
+                "ticket_id": 1001,
+                "customer": "John",
+                "category": "refund",
+                "priority": "high",
+            }
+        )

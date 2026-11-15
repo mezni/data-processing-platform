@@ -37,25 +37,13 @@ def main():
 
     print("Ticket:", repository.get(1001))
 
-    print(
-        "High priority:",
-        repository.filter_by_priority("high")
-    )
+    print("High priority:", repository.filter_by_priority("high"))
 
-    print(
-        "Categories:",
-        repository.group_by_category()
-    )
+    print("Categories:", repository.group_by_category())
 
-    print(
-        "Customers:",
-        repository.get_unique_customers()
-    )
+    print("Customers:", repository.get_unique_customers())
 
-    print(
-        "Statistics:",
-        repository.count_by_priority()
-    )
+    print("Statistics:", repository.count_by_priority())
 
 
 if __name__ == "__main__":

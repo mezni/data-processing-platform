@@ -400,3 +400,386 @@ git commit -m "docs(support-agent): document day 1 architecture"
 **Architecture status:** Initial implementation — Day 1.
 
 **Next:** Day 2 — Python Data Structures for AI Engineering.
+
+
+# Day 2 — Architecture: Ticket Repository and Data Structures
+
+**Project:** `support-agent`  
+**Phase:** 1 — Software & Data Foundations  
+**Day:** 2 — Python Data Structures for AI Engineering  
+**Status:** Learning implementation
+
+---
+
+## 1. Purpose
+
+This document describes the architecture of the ticket repository introduced on Day 2.
+
+The goal is to manage support tickets efficiently using appropriate Python data structures.
+
+The repository provides operations to:
+
+- Store tickets.
+- Retrieve tickets by ID.
+- Filter tickets by priority.
+- Group tickets by category.
+- Identify unique customers.
+- Calculate ticket statistics.
+
+## 2. Problem Statement
+
+The initial implementation processes individual tickets.
+
+As the application grows, it needs to manage collections of tickets efficiently.
+
+Consider a system processing 100,000 support tickets.
+
+Using a list for every lookup requires scanning records sequentially. This becomes inefficient as the dataset grows.
+
+We need a structure that supports efficient ticket retrieval and straightforward aggregation.
+
+## 3. Architecture Overview
+
+We use a simple modular architecture.
+
+```mermaid
+flowchart TD
+    A[Main Application] --> B[Ticket Repository]
+    B --> C[(In-Memory Dictionary)]
+    B --> D[Filtering Operations]
+    B --> E[Aggregation Operations]
+
+    C --> F[Ticket Records]
+    D --> F
+    E --> F
+
+    style A fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    style B fill:#dcfce7,stroke:#16a34a,color:#14532d
+    style C fill:#fef3c7,stroke:#d97706,color:#78350f
+```
+
+### Components
+
+| Component | Responsibility |
+|---|---|
+| Main Application | Creates and submits ticket data |
+| Ticket Repository | Provides ticket storage and query operations |
+| Dictionary | Stores tickets indexed by ticket ID |
+| Filtering Operations | Selects tickets using business criteria |
+| Aggregation Operations | Calculates statistics and groups |
+
+## 4. Project Structure
+
+```text
+support-agent/
+├── src/
+│   └── support_agent/
+│       ├── __init__.py
+│       ├── main.py
+│       ├── ticket_processor.py
+│       └── ticket_repository.py
+│
+├── tests/
+│   ├── test_ticket_processor.py
+│   └── test_ticket_repository.py
+│
+├── docs/
+│   └── day-02/
+│       ├── README.md
+│       ├── notes.md
+│       ├── exercises.md
+│       └── architecture.md
+│
+├── CHANGELOG.md
+├── README.md
+└── pyproject.toml
+```
+
+## 5. Data Model
+
+A ticket is represented as a dictionary.
+
+```python
+ticket = {
+    "ticket_id": 1001,
+    "customer_id": 501,
+    "message": "My order #4821 has not arrived.",
+    "category": "order_status",
+    "priority": "high",
+}
+```
+
+### Ticket attributes
+
+| Attribute | Type | Description |
+|---|---|---|
+| ticket_id | int | Unique ticket identifier |
+| customer_id | int | Customer identifier |
+| message | str | Original customer message |
+| category | str | Ticket classification |
+| priority | str | Ticket priority |
+
+**Important:** This is a learning data model. Later phases will introduce typed domain models using dataclasses or Pydantic.
+
+## 6. Repository Design
+
+### 6.1 Storage Strategy
+
+Use a dictionary keyed by `ticket_id`.
+
+```python
+self._tickets: dict[int, dict] = {}
+```
+
+Example:
+
+```python
+{
+    1001: {
+        "ticket_id": 1001,
+        "customer_id": 501,
+        "category": "order_status",
+        "priority": "high",
+    },
+    1002: {
+        "ticket_id": 1002,
+        "customer_id": 502,
+        "category": "refund",
+        "priority": "medium",
+    },
+}
+```
+
+This design provides direct access to a ticket using its identifier.
+
+### 6.2 Repository Interface
+
+The repository exposes the following operations:
+
+| Method | Responsibility | Expected complexity |
+|---|---|---|
+| `add(ticket)` | Add a ticket | O(1) average |
+| `get(ticket_id)` | Retrieve a ticket | O(1) average |
+| `get_all()` | Retrieve all tickets | O(n) |
+| `filter_by_priority(priority)` | Filter tickets | O(n) |
+| `group_by_category()` | Group tickets | O(n) |
+| `get_unique_customers()` | Find unique customers | O(n) average |
+| `count_by_priority()` | Count tickets by priority | O(n) |
+
+Complexities are average-case expectations for Python dictionary and set operations.
+
+## 7. Data Structure Decisions
+
+### Dictionary
+
+**Purpose:** Store tickets using their unique identifiers.
+
+```python
+tickets = {
+    1001: {"ticket_id": 1001, "priority": "high"},
+    1002: {"ticket_id": 1002, "priority": "medium"},
+}
+```
+
+Why?
+
+- Fast average-case lookup.
+- Unique keys.
+- Natural mapping between ticket ID and ticket data.
+
+### List
+
+**Purpose:** Return collections of tickets.
+
+```python
+high_priority_tickets = [
+    ticket for ticket in tickets.values() if ticket["priority"] == "high"
+]
+```
+
+### Set
+
+**Purpose:** Track unique customers.
+
+```python
+customer_ids = {ticket["customer_id"] for ticket in tickets.values()}
+```
+
+### Tuple
+
+**Purpose:** Represent immutable sequences where appropriate, such as fixed configuration values.
+
+```python
+VALID_PRIORITIES = ("low", "medium", "high", "critical")
+```
+
+## 8. Data Flow
+
+### Add Ticket
+
+```mermaid
+sequenceDiagram
+    participant Main
+    participant Repository
+    participant Dictionary
+
+    Main->>Repository: add(ticket)
+    Repository->>Dictionary: Store by ticket_id
+    Dictionary-->>Repository: Stored
+    Repository-->>Main: Confirmation
+```
+
+### Retrieve Ticket
+
+```mermaid
+sequenceDiagram
+    participant Main
+    participant Repository
+    participant Dictionary
+
+    Main->>Repository: get(1001)
+    Repository->>Dictionary: Lookup key 1001
+    Dictionary-->>Repository: Ticket or missing value
+    Repository-->>Main: Return result
+```
+
+### Generate Statistics
+
+```mermaid
+sequenceDiagram
+    participant Main
+    participant Repository
+    participant Dictionary
+
+    Main->>Repository: count_by_priority()
+    Repository->>Dictionary: Read ticket values
+    loop Each ticket
+        Repository->>Repository: Increment priority count
+    end
+    Repository-->>Main: Statistics dictionary
+```
+
+## 9. Design Principles
+
+### Separation of Responsibilities
+
+The main application should not implement storage and filtering logic directly.
+
+The repository owns ticket collection operations.
+
+### Encapsulation
+
+The internal dictionary is private:
+
+```python
+self._tickets = {}
+```
+
+Application code should interact through repository methods rather than modifying internal storage directly.
+
+### Reusability
+
+The repository can be reused by:
+
+- A command-line application.
+- A FastAPI endpoint.
+- A batch-processing pipeline.
+- A future AI ticket-classification service.
+
+## 10. Error Handling and Data Integrity
+
+The repository should eventually enforce these rules:
+
+1. Ticket IDs must be unique.
+2. Required ticket attributes must be present.
+3. Invalid priorities must be rejected.
+4. Missing ticket IDs should return a predictable result.
+5. Stored ticket data should not be accidentally modified by external callers.
+
+These are design requirements to implement and test as the repository evolves.
+
+## 11. Testing Strategy
+
+The repository should have unit tests covering:
+
+| Test | Expected behavior |
+|---|---|
+| Add ticket | Ticket is stored |
+| Retrieve existing ticket | Correct ticket returned |
+| Retrieve missing ticket | Predictable missing result |
+| Add duplicate ID | Defined duplicate policy enforced |
+| Filter by priority | Only matching tickets returned |
+| Group by category | Correct category groups returned |
+| Unique customers | Duplicate customer IDs removed |
+| Count by priority | Correct counts returned |
+| Empty repository | Operations return valid empty results |
+
+Run tests:
+
+```bash
+uv run pytest -v
+```
+
+## 12. Architecture Trade-offs
+
+| Decision | Benefit | Trade-off |
+|---|---|---|
+| Dictionary storage | Fast average lookup | Entire dataset resides in memory |
+| List for query results | Simple iteration | Additional memory allocation |
+| Set for unique customers | Efficient uniqueness checks | Does not preserve meaningful order |
+| Repository abstraction | Separates storage from application logic | Adds an abstraction layer |
+| In-memory storage | Easy to understand and test | Data is lost when the application stops |
+
+## 13. Scalability Considerations
+
+The current implementation is appropriate for learning and small in-memory datasets.
+
+For larger workloads:
+
+- Introduce PostgreSQL for persistent storage.
+- Use database indexes for ticket ID, customer ID, and priority.
+- Implement pagination instead of returning every ticket.
+- Use SQL aggregation for large-scale statistics.
+- Introduce caching only when profiling demonstrates a need.
+
+The dictionary is not a replacement for a production database.
+
+## 14. Future Architecture Evolution
+
+The repository will evolve throughout the roadmap:
+
+```mermaid
+flowchart TD
+    A[Day 2: In-Memory Repository] --> B[SQL and Database Engineering]
+    B --> C[PostgreSQL Repository]
+    C --> D[FastAPI Service]
+    D --> E[Data Ingestion Pipeline]
+    E --> F[AI Ticket Classification]
+    F --> G[Production Support Agent]
+
+    style A fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    style C fill:#dcfce7,stroke:#16a34a,color:#14532d
+    style F fill:#fef3c7,stroke:#d97706,color:#78350f
+    style G fill:#ede9fe,stroke:#7c3aed,color:#4c1d95
+```
+
+## 15. Day 2 Completion Criteria
+
+- [ ] Understand lists, tuples, dictionaries, and sets.
+- [ ] Understand average-case dictionary lookup complexity.
+- [ ] Implement `TicketRepository`.
+- [ ] Implement filtering and aggregation methods.
+- [ ] Write unit tests.
+- [ ] Understand the trade-offs of in-memory storage.
+- [ ] Document the architecture.
+
+## 16. Git Commit
+
+```bash
+git add docs/day-02/
+git commit -m "docs(support-agent): document day 2 repository architecture"
+```
+
+---
+
+**Next:** Day 3 — Python Functions, Modules & Packages.
