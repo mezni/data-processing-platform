@@ -63,3 +63,23 @@
 - Imports and dependency organization.
 - Python project organization.
 
+
+## Day 3 — Python Functions, Modules & Packages
+
+### Added
+- Modular support-agent package structure.
+- Ticket processing service.
+- Ticket repository module.
+- Ticket statistics utility.
+- Package exports using __init__.py.
+
+### Improved
+- Separated application entry point from business logic.
+- Improved function responsibilities.
+- Used explicit imports.
+- Added tests for processing and repository behavior.
+
+### Architecture
+- Introduced modular package organization.
+- Separated services, repositories, and utilities.
+- Established clearer module responsibilities.
