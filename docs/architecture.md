@@ -783,3 +783,353 @@ git commit -m "docs(support-agent): document day 2 repository architecture"
 ---
 
 **Next:** Day 3 — Python Functions, Modules & Packages.
+
+---
+
+# Day 3 — Architecture: Modules, Interfaces and Services
+
+## 1. Class Diagram
+
+```mermaid
+classDiagram
+    class TicketService {
+        -TicketClassifier classifier
+        -TicketRepository repository
+        +process(ticket) Ticket
+    }
+
+    class TicketClassifier {
+        <<abstract>>
+        +classify(message)* str
+    }
+
+    class RuleBasedClassifier {
+        +classify(message) str
+    }
+
+    class LLMTicketClassifier {
+        +classify(message) str
+    }
+
+    class TicketRepository {
+        +add(ticket) None
+        +get(ticket_id) Ticket
+    }
+
+    TicketClassifier <|-- RuleBasedClassifier
+    TicketClassifier <|-- LLMTicketClassifier
+    TicketService --> TicketClassifier
+    TicketService --> TicketRepository
+```
+
+
+
+
+## 5. Project Structure
+
+The project follows a modular Python package structure. Each directory has a clear architectural responsibility.
+
+```text
+support-agent/
+│
+├── pyproject.toml
+├── uv.lock
+├── README.md
+├── CHANGELOG.md
+├── .gitignore
+│
+├── src/
+│   └── support_agent/
+│       ├── __init__.py
+│       ├── main.py
+│       │
+│       ├── domain/
+│       │   ├── __init__.py
+│       │   └── ticket.py
+│       │
+│       ├── interfaces/
+│       │   ├── __init__.py
+│       │   └── ticket_classifier.py
+│       │
+│       ├── services/
+│       │   ├── __init__.py
+│       │   └── ticket_service.py
+│       │
+│       ├── classifiers/
+│       │   ├── __init__.py
+│       │   └── rule_based_classifier.py
+│       │
+│       └── repositories/
+│           ├── __init__.py
+│           └── ticket_repository.py
+│
+├── tests/
+│   ├── __init__.py
+│   ├── test_ticket_service.py
+│   ├── test_ticket_classifier.py
+│   └── test_ticket_repository.py
+│
+└── docs/
+    └── day-04/
+        ├── README.md
+        ├── notes.md
+        ├── exercises.md
+        └── architecture.md
+```
+
+### 5.1 Root Directory
+
+| File | Responsibility |
+|---|---|
+| `pyproject.toml` | Project metadata, dependencies, and tool configuration |
+| `uv.lock` | Reproducible dependency versions |
+| `README.md` | Project overview and setup instructions |
+| `CHANGELOG.md` | Records daily development progress |
+| `.gitignore` | Excludes generated and local files from Git |
+
+### 5.2 Source Directory
+
+The application source code lives inside:
+
+```text
+src/support_agent/
+```
+
+This uses the Python `src` layout, which helps ensure the installed package is imported instead of accidentally importing code from the repository root.
+
+### 5.3 Domain Layer
+
+```text
+domain/
+├── __init__.py
+└── ticket.py
+```
+
+**Responsibility:** Represent the core business concepts.
+
+`ticket.py` contains the `Ticket` domain model.
+
+Example:
+
+```python
+from dataclasses import dataclass
+
+
+@dataclass
+class Ticket:
+    ticket_id: int
+    customer_id: int
+    message: str
+    category: str = "general"
+    priority: str = "normal"
+    order_id: str | None = None
+```
+
+Domain rules should not depend on FastAPI, PostgreSQL, or a specific LLM provider.
+
+### 5.4 Interfaces Layer
+
+```text
+interfaces/
+├── __init__.py
+└── ticket_classifier.py
+```
+
+**Responsibility:** Define contracts that implementations must follow.
+
+`ticket_classifier.py` defines the `TicketClassifier` abstract base class.
+
+Example:
+
+```python
+from abc import ABC, abstractmethod
+
+
+class TicketClassifier(ABC):
+
+    @abstractmethod
+    def classify(self, message: str) -> str:
+        pass
+```
+
+Future implementations must follow this contract.
+
+### 5.5 Services Layer
+
+```text
+services/
+├── __init__.py
+└── ticket_service.py
+```
+
+**Responsibility:** Coordinate application operations and business workflows.
+
+`ticket_service.py` contains `TicketService`.
+
+Its responsibilities include:
+
+- Accepting a ticket.
+- Calling the classifier.
+- Updating the ticket category.
+- Saving the processed ticket.
+- Returning the result.
+
+The service should depend on component contracts rather than constructing concrete infrastructure implementations internally.
+
+### 5.6 Classifiers Layer
+
+```text
+classifiers/
+├── __init__.py
+└── rule_based_classifier.py
+```
+
+**Responsibility:** Implement ticket classification strategies.
+
+Current implementation:
+
+- `RuleBasedClassifier`
+
+Future implementations:
+
+- `LLMTicketClassifier`
+- `HybridTicketClassifier`
+- `LocalModelClassifier`
+
+Each implementation follows the `TicketClassifier` contract.
+
+### 5.7 Repositories Layer
+
+```text
+repositories/
+├── __init__.py
+└── ticket_repository.py
+```
+
+**Responsibility:** Manage ticket storage and retrieval.
+
+Current implementation:
+
+- In-memory `TicketRepository`
+
+Future implementation:
+
+- PostgreSQL repository
+- Other persistent storage adapters
+
+The repository provides operations such as:
+
+- `add()`
+- `get()`
+- `get_all()`
+- `count()`
+
+The service should not access the repository's private storage directly.
+
+**Architecture note:** The Day 4 implementation uses a concrete repository class. A dedicated repository interface can be introduced when we add alternative persistence implementations.
+
+### 5.8 Application Entry Point
+
+```text
+main.py
+```
+
+**Responsibility:** Assemble and start the application.
+
+It acts as the composition root:
+
+1. Instantiate the classifier.
+2. Instantiate the repository.
+3. Inject dependencies into `TicketService`.
+4. Create or receive a ticket.
+5. Execute the workflow.
+
+Example:
+
+```python
+classifier = RuleBasedClassifier()
+repository = TicketRepository()
+
+service = TicketService(
+    classifier=classifier,
+    repository=repository,
+)
+```
+
+The entry point should not contain substantial business logic.
+
+### 5.9 Tests Directory
+
+```text
+tests/
+├── __init__.py
+├── test_ticket_service.py
+├── test_ticket_classifier.py
+└── test_ticket_repository.py
+```
+
+| Test file | Responsibility |
+|---|---|
+| `test_ticket_service.py` | Test ticket processing workflows and dependency injection |
+| `test_ticket_classifier.py` | Test classification behavior |
+| `test_ticket_repository.py` | Test storage, retrieval, and duplicate handling |
+
+Use fake implementations for dependencies when testing service behavior independently.
+
+### 5.10 Documentation Directory
+
+```text
+docs/
+└── day-04/
+    ├── README.md
+    ├── notes.md
+    ├── exercises.md
+    └── architecture.md
+```
+
+| File | Responsibility |
+|---|---|
+| `README.md` | Day 4 objectives and implementation summary |
+| `notes.md` | OOP concepts and technical notes |
+| `exercises.md` | Practical exercises and solutions |
+| `architecture.md` | Architecture decisions, diagrams, and component responsibilities |
+
+## 5.11 Component Responsibility Summary
+
+| Component | Layer | Main responsibility |
+|---|---|---|
+| `Ticket` | Domain | Represents a support ticket |
+| `TicketClassifier` | Interfaces | Defines the classification contract |
+| `TicketService` | Services | Coordinates ticket processing |
+| `RuleBasedClassifier` | Classifiers | Classifies tickets using rules |
+| `TicketRepository` | Repositories | Stores and retrieves tickets |
+| `main.py` | Application | Assembles dependencies and starts execution |
+
+## 5.12 Dependency Direction
+
+The intended dependency relationships are:
+
+```mermaid
+flowchart TD
+    A[Application Entry Point] --> B[Application Services]
+    A --> C[Concrete Implementations]
+
+    B --> D[Domain Models]
+    B --> E[Classifier Contract]
+    C --> E
+
+    C --> F[Infrastructure / Storage]
+
+    style A fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    style B fill:#dcfce7,stroke:#16a34a,color:#14532d
+    style D fill:#fef3c7,stroke:#d97706,color:#78350f
+    style E fill:#ede9fe,stroke:#7c3aed,color:#4c1d95
+```
+
+The application entry point knows the concrete implementations because it is responsible for assembling the system.
+
+The service uses the classifier contract and domain model.
+
+The goal is to prevent application business logic from becoming dependent on a specific AI provider or storage technology.
+
+**Important:** This is an incremental learning architecture, not yet a complete Clean Architecture or Hexagonal Architecture implementation. We will introduce stronger persistence abstractions and infrastructure boundaries as the project evolve.

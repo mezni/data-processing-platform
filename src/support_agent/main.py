@@ -1,49 +1,34 @@
-from support_agent.services.ticket_processor import (
-    process_ticket,
+from support_agent.classifiers.rule_based_classifier import (
+    RuleBasedClassifier,
 )
+from support_agent.domain.ticket import Ticket
 from support_agent.repositories.ticket_repository import (
     TicketRepository,
 )
-from support_agent.utils.ticket_statistics import (
-    calculate_ticket_statistics,
+from support_agent.services.ticket_service import (
+    TicketService,
 )
 
 
 def main() -> None:
+    classifier = RuleBasedClassifier()
     repository = TicketRepository()
 
-    raw_tickets = [
-        {
-            "ticket_id": 1001,
-            "customer_id": 501,
-            "message": "My order #4821 has not arrived.",
-        },
-        {
-            "ticket_id": 1002,
-            "customer_id": 502,
-            "message": "I need an urgent refund.",
-        },
-        {
-            "ticket_id": 1003,
-            "customer_id": 501,
-            "message": "I have a payment issue.",
-        },
-    ]
+    service = TicketService(
+        classifier=classifier,
+        repository=repository,
+    )
 
-    for raw_ticket in raw_tickets:
-        processed_ticket = process_ticket(raw_ticket)
-        repository.add(processed_ticket)
+    ticket = Ticket(
+        ticket_id=1001,
+        customer_id=501,
+        message="My order #4821 has not arrived.",
+    )
 
-    tickets = repository.get_all()
+    processed_ticket = service.process(ticket)
 
-    statistics = calculate_ticket_statistics(tickets)
-
-    print("Tickets:")
-    for ticket in tickets:
-        print(ticket)
-
-    print("\nStatistics:")
-    print(statistics)
+    print(processed_ticket)
+    print(f"Stored tickets: {repository.count()}")
 
 
 if __name__ == "__main__":

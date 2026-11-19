@@ -6,21 +6,15 @@ from support_agent.services.ticket_processor import (
 
 
 def test_extract_order_id():
-    assert extract_order_id(
-        "My order #4821 has not arrived."
-    ) == "4821"
+    assert extract_order_id("My order #4821 has not arrived.") == "4821"
 
 
 def test_extract_missing_order_id():
-    assert extract_order_id(
-        "I need a refund."
-    ) is None
+    assert extract_order_id("I need a refund.") is None
 
 
 def test_classify_refund_ticket():
-    assert classify_ticket(
-        "I need a refund."
-    ) == "refund"
+    assert classify_ticket("I need a refund.") == "refund"
 
 
 def test_process_ticket():

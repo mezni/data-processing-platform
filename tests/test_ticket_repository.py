@@ -1,5 +1,6 @@
 import pytest
 
+from support_agent.domain.ticket import Ticket
 from support_agent.repositories.ticket_repository import (
     TicketRepository,
 )
@@ -8,12 +9,13 @@ from support_agent.repositories.ticket_repository import (
 def test_add_and_get_ticket():
     repository = TicketRepository()
 
-    ticket = {
-        "ticket_id": 1001,
-        "customer_id": 501,
-        "category": "order_status",
-        "priority": "high",
-    }
+    ticket = Ticket(
+        ticket_id=1001,
+        customer_id=501,
+        message="My order #4821 has not arrived.",
+        category="order_status",
+        priority="high",
+    )
 
     repository.add(ticket)
 
@@ -25,12 +27,13 @@ def test_add_and_get_ticket():
 def test_duplicate_ticket_is_rejected():
     repository = TicketRepository()
 
-    ticket = {
-        "ticket_id": 1001,
-        "customer_id": 501,
-        "category": "order_status",
-        "priority": "high",
-    }
+    ticket = Ticket(
+        ticket_id=1001,
+        customer_id=501,
+        message="My order #4821 has not arrived.",
+        category="order_status",
+        priority="high",
+    )
 
     repository.add(ticket)
 

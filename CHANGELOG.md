@@ -83,3 +83,31 @@
 - Introduced modular package organization.
 - Separated services, repositories, and utilities.
 - Established clearer module responsibilities.
+
+
+## Day 4 — Object-Oriented Programming and Python Design
+
+### Added
+- Ticket domain model using dataclasses.
+- Abstract TicketClassifier interface.
+- RuleBasedClassifier implementation.
+- TicketService application service.
+- Dependency injection for classifier and repository.
+- OOP unit tests.
+
+### Improved
+- Introduced encapsulation for repository storage.
+- Separated domain, interfaces, services, classifiers, and repositories.
+- Established interchangeable classifier implementations.
+- Improved testability through dependency injection.
+
+### Architecture
+- Introduced object-oriented application design.
+- Applied abstraction, encapsulation, composition, and polymorphism.
+- Established the application composition root in main.py.
+
+### Technical Decisions
+- Used composition instead of unnecessary inheritance.
+- Used an abstract base class to define the classifier contract.
+- Kept persistence in memory for this learning stage.
+- Deferred LLM integration to a later phase.
